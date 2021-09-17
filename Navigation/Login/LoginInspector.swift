@@ -1,14 +1,14 @@
-//
+
 //  LoginInspector.swift
 //  Navigation
 //
 //  Created by Alexey Kharin on 21.04.2021.
 //  Copyright © 2021 Artem Novichkov. All rights reserved.
-//
+
 
 import UIKit
 
-protocol LoginViewControllerDelegate {
+protocol Output {
     
     func checkLogin(login: String) -> Bool
     
@@ -16,7 +16,7 @@ protocol LoginViewControllerDelegate {
     
 }
 
-class LoginInspector: LoginViewControllerDelegate {
+class LoginInspector: Output {
     
     var login: String
     

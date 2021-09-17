@@ -8,19 +8,34 @@
 
 import Foundation
 import UIKit
+import FirebaseAuth
 
-protocol OutPut {
-    
-    var delegate: LoginViewControllerDelegate? { get set }
+protocol LoginViewControllerDelegate {
     
     func show()
     
+    func typeEmailAndPswd()
+    
+    func signOut()
+    
+    var logIn: (() -> Void)? {get set}
+    
+    var currenUser: User? { get set }
+    
     var pswd: String? { get set }
     
-    var login: String? { get set }
+    var email: String? { get set }
 }
 
-class ViewPresenter: OutPut {
+class ViewPresenter: LoginViewControllerDelegate {
+    
+    var logIn: (() -> Void)?
+    
+    var currenUser: User?
+    
+    var pswd: String?
+    
+    var email: String?
     
     var navigationController: UINavigationController?
     
@@ -28,24 +43,59 @@ class ViewPresenter: OutPut {
         self.navigationController = navigationController
     }
     
-    var delegate: LoginViewControllerDelegate?
-
-    var pswd: String?
     
-    var login: String?
+    func typeEmailAndPswd() {
+
+        guard let pswd = pswd else { return }
+        guard let email = email else { return }
+
+        FirebaseAuth.Auth.auth().signIn(withEmail: email, password: pswd) { (result, error) in
+            
+            guard error == nil else {
+                self.createAccount(email: email, pswd: pswd)
+                return
+            }
+            self.show()
+            self.logIn?()
+           
+        }
+    }
+    
+    private func createAccount(email: String, pswd: String) {
+        let alert = UIAlertController(title: "По данноум паролю и логину аккаунт не создан", message: "Хотите создать аккаунт", preferredStyle: .alert)
+        let actionCancel = UIAlertAction(title: "Отмена", style: .cancel) { (_) in
+        }
+        let actionContinue = UIAlertAction(title: "Создать", style: .default) { (_) in
+            FirebaseAuth.Auth.auth().createUser(withEmail: email, password: pswd) { (result, error) in
+                guard error == nil else {
+                    print("Аккаунт не создан")
+                    return
+                }
+                self.currenUser = FirebaseAuth.Auth.auth().currentUser
+                print("Успешно")
+            }
+        }
+        
+        alert.addAction(actionContinue)
+        alert.addAction(actionCancel)
+        navigationController?.present(alert, animated: true, completion: nil)
+    }
+    
+    func signOut() {
+        do {
+            try  FirebaseAuth.Auth.auth().signOut()
+        } catch {
+            print("Возникла ошибка")
+        }
+    }
     
     func show() {
-        guard let safetyPswd = pswd else { return }
-        guard let safetyLogin = login else { return }
-        guard let delegateSafety = delegate else { return }
-        if delegateSafety.checkLogin(login: safetyLogin) && delegateSafety.checkPswd(pswd: safetyPswd) {
-            let vc = ProfileViewController()
-            navigationController?.pushViewController(vc, animated: true)
+        let vc = ProfileViewController()
+        navigationController?.pushViewController(vc, animated: true)
         
-    }
     }
 }
 
-    
-  
-    
+
+
+

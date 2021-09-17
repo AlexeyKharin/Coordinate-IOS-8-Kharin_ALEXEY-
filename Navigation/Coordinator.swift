@@ -14,18 +14,19 @@ class Coordinator: NSObject {
     @IBOutlet weak var tabBarController: UITabBarController!
     
     private  let postPresenter = PostPresenter()
-
+    
     override func awakeFromNib() {
         super.awakeFromNib()
- 
+        
+        
         if let feedNavigationfirst = tabBarController.viewControllers?.first as? UINavigationController, let feedViewController = feedNavigationfirst.viewControllers.first as? FeedViewController {
             feedViewController.output = postPresenter
             postPresenter.navigationController = feedNavigationfirst
         }
         
-        if let loginNavigation = tabBarController.viewControllers?.last as? UINavigationController, let loginController = loginNavigation.viewControllers.last as? LogInViewController {
+        if let loginNavigation = tabBarController.viewControllers?[1] as? UINavigationController, let loginController = loginNavigation.viewControllers.last as? LogInViewController {
             let viewPresenter = ViewPresenter(navigationController: loginNavigation)
-            viewPresenter.delegate = LoginInspector.shared
+//            viewPresenter.delegate = LoginInspector.shared
             loginController.outPut = viewPresenter
         }
         

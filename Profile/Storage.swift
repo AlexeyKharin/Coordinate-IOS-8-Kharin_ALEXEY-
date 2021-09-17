@@ -1,7 +1,7 @@
 
 
 import UIKit
-struct  ImageContent {
+struct  ImageContent: Equatable {
     let image: UIImage
     let likes: String
     let views: String

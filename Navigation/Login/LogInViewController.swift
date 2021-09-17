@@ -9,7 +9,7 @@ import UIKit
 
 class LogInViewController: UIViewController {
     
-    var outPut: OutPut?
+    var outPut: LoginViewControllerDelegate?
     
     var image: UIImageView = {
         let image = UIImageView()
@@ -35,7 +35,44 @@ class LogInViewController: UIViewController {
     }()
     
     @objc func press () {
-        outPut?.show()
+     outPut?.typeEmailAndPswd()
+        outPut?.logIn = {
+            if self.outPut?.currenUser != nil {
+                self.showButtonOut()
+        }
+        }
+    }
+    
+    func showButtonOut() {
+        containerView.addSubview(buttonOut)
+        let constraints = [
+            buttonOut.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
+            buttonOut.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            buttonOut.widthAnchor.constraint(equalToConstant: 70),
+            buttonOut.heightAnchor.constraint(equalToConstant: 20)
+        ]
+        NSLayoutConstraint.activate(constraints)
+    }
+    
+
+//    MARK:- Out from account
+    lazy var buttonOut: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Sign Out", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.toAutoLayout()
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 16)
+        button.setBackgroundImage(#imageLiteral(resourceName: "blue_pixel").alpha(1), for: .normal)
+        button.layer.cornerRadius = 3
+        button.contentHorizontalAlignment = .center
+        button.layer.masksToBounds = true
+        button.addTarget(self, action: #selector(signOut), for: .touchUpInside)
+        return button
+    }()
+    
+    @objc func signOut () {
+        outPut?.signOut()
+        buttonOut.removeFromSuperview()
     }
     
     var stack: UIStackView = {
@@ -69,6 +106,7 @@ class LogInViewController: UIViewController {
     
     @objc func savePswd() {
         outPut?.pswd = textfieldOne.text
+        disAbleButton()
     }
     
     lazy var textfieldTwo: MyTextField = {
@@ -85,9 +123,17 @@ class LogInViewController: UIViewController {
     }()
     
     @objc func saveLogin() {
-        outPut?.login = textfieldTwo.text
+        outPut?.email = textfieldTwo.text
+        disAbleButton()
     }
     
+    func disAbleButton() {
+        if textfieldOne.text?.count == 0 && textfieldTwo.text?.count == 0 {
+            buyButton.isHidden = true
+        } else {
+            buyButton.isHidden = false
+        }
+    }
     private let containerView: UIView = {
         let containerView = UIView()
         containerView.toAutoLayout()
@@ -100,11 +146,10 @@ class LogInViewController: UIViewController {
         return sv
     }()
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-//        outPut?.navigationController = navigationController
-        outPut?.login = textfieldTwo.text
-        outPut?.pswd = textfieldOne.text
+               
         view.backgroundColor = .white
         view.addSubview(scrollView)
         scrollView.addSubview(containerView)

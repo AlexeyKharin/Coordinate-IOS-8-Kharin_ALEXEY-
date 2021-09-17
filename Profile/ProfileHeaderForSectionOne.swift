@@ -1,13 +1,4 @@
-
-
-
-
-
-
-
 import UIKit
-
-
 final class ProfileHeaderForSectionOne: UITableViewHeaderFooterView {
     var profileHeder: PostContent? {
         didSet {
@@ -15,7 +6,9 @@ final class ProfileHeaderForSectionOne: UITableViewHeaderFooterView {
             label.text = profileHeder?.profileName
         }
     }
+    
     var delegate: CellDelegate?
+    
     var image: UIImageView = {
         let image = UIImageView()
         image.image = UIImage(named: "Lion")
