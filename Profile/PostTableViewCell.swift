@@ -1,13 +1,8 @@
-
-
-
-
-
-
-
 import UIKit
 
 class PostTableViewCell: UITableViewCell {
+    
+    private let stack = CoreDataStack()
     
     var content: ImageContent? {
         didSet {
@@ -16,6 +11,35 @@ class PostTableViewCell: UITableViewCell {
             descriptionLabel.text = content?.discreption
             viewLabel.text = content?.views
             likeLabel.text = content?.likes
+        }
+    }
+    
+    func update() {
+        let arrayPost = stack.fetchLikedContent()
+        
+        var arrayString = [String]()
+        
+        guard let  imageSafety = content?.image , let discreptionSafety = content?.discreption, let likesSafety = content?.likes, let titleSafety = content?.title, let viewsSafety = content?.views else { return }
+        
+        if arrayPost.count != 0 {
+            for i in arrayPost {
+                if let safetyDiscreption = i.title {
+                    
+                    arrayString.append(safetyDiscreption)
+                }
+            }
+            if !arrayString.contains(titleSafety) {
+                stack.createNewPost(image: imageSafety, likes: likesSafety, views: viewsSafety, discreption: discreptionSafety, title: titleSafety)
+                arrayString = []
+            } else {
+                if let indexRemoved = arrayPost.first(where: { $0.discreption == discreptionSafety}) {
+                    stack.remove(likedContent: indexRemoved)
+                    arrayString = []
+                }
+            }
+        } else {
+            stack.createNewPost(image: imageSafety, likes: likesSafety, views: viewsSafety, discreption: discreptionSafety, title: titleSafety)
+            arrayString = []
         }
     }
     

@@ -1,5 +1,3 @@
-
-
 import UIKit
 struct  ImageContent: Equatable {
     let image: UIImage

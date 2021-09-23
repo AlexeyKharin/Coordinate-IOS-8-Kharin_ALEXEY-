@@ -22,6 +22,8 @@ class CoreDataStack {
         let container = NSPersistentContainer(name: "LikedPostsModel")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
+//                container.viewContext.mergePolicy = NSMergePolicyType.mergeByPropertyObjectTrumpMergePolicyType
+    
                 // Replace this implementation with code to handle the error appropriately.
                 // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
                 
@@ -34,32 +36,36 @@ class CoreDataStack {
                  Check the error message to determine what the actual problem was.
                  */
                 fatalError("Unresolved error \(error), \(error.userInfo)")
+                
             }
         })
         return container
     }()
     
-    var viewContext: NSManagedObjectContext {
-        return persistentContainer.viewContext
+    func viewContext() -> NSManagedObjectContext {
+        let viewContext = persistentContainer.viewContext
+        viewContext.mergePolicy = AllowVersionMismatchMergePolicy(merge: .errorMergePolicyType)
+        return viewContext
     }
     
-    var newBackgroundContext: NSManagedObjectContext {
-        return persistentContainer.newBackgroundContext()
+    func newBackgroundContext() -> NSManagedObjectContext {
+        let newBackgroundContext = persistentContainer.newBackgroundContext()
+        newBackgroundContext.mergePolicy = AllowVersionMismatchMergePolicy(merge: .errorMergePolicyType)
+        return newBackgroundContext
     }
     
     func fetchLikedContent() -> [LikedContent] {
         let request: NSFetchRequest<LikedContent> = LikedContent.fetchRequest()
         do {
-            return try viewContext.fetch(request)
+            return try viewContext().fetch(request)
         } catch {
             fatalError("🤷‍♂️ Что-то пошло не так..")
         }
     }
     
-    
     func remove(likedContent: LikedContent) {
-        viewContext.delete(likedContent)
-        save(context: viewContext)
+        viewContext().delete(likedContent)
+        save(context: viewContext())
     }
     
     func createNewPost(image: UIImage, likes: String, views: String, discreption: String, title: String) {
@@ -84,9 +90,34 @@ class CoreDataStack {
         }
     }
 }
-class Policy: NSMergePolicy {
-    override init(merge ty: NSMergePolicyType) {
-        super.init(merge: .mergeByPropertyObjectTrumpMergePolicyType)
+class AllowVersionMismatchMergePolicy: NSMergePolicy {
+    override func resolve(optimisticLockingConflicts list: [NSMergeConflict]) throws {
+        do {
+            //if the default resolve worked leave it alone
+            return try super.resolve(optimisticLockingConflicts: list)
+        } catch {
+            //if any of the conflict is not a simple version mismatch (all other keys being equal), fail
+            let hasValueConflict = list.contains { conflict -> Bool in
+                //compare object and row cache
+                if let objectSnapshot = conflict.objectSnapshot as NSObject?,
+                    let cachedSnapshot = conflict.cachedSnapshot as NSObject? {
+                    return !objectSnapshot.isEqual(cachedSnapshot)
+                }
+                //compare row cache and database
+                if let cachedSnapshot = conflict.cachedSnapshot as NSObject?,
+                    let persistedSnapshot = conflict.persistedSnapshot as NSObject? {
+                    return !cachedSnapshot.isEqual(persistedSnapshot)
+                }
+                //never happens, see NSMergePolicy.h
+                return true
+            }
+            if hasValueConflict {
+                throw error
+            }
+
+            //Use store rollback merge policy to resolve all the version mismatches
+            return try NSMergePolicy.rollback.resolve(optimisticLockingConflicts: list)
+        }
     }
 }
 
