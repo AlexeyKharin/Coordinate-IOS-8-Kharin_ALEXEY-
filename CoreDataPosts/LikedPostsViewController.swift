@@ -9,9 +9,7 @@ import UIKit
 import CoreData
 
 class LikedPostsViewController: UIViewController {
-    
-    private let notificationCenter = NotificationCenter.default
-    
+
     private let stack = CoreDataStack()
     
     let request: NSFetchRequest<LikedContent> = LikedContent.fetchRequest()
@@ -22,23 +20,24 @@ class LikedPostsViewController: UIViewController {
         
         let controller = NSFetchedResultsController(
             fetchRequest: request,
-            managedObjectContext: stack.viewContext,
+            managedObjectContext: stack.viewContext(),
             sectionNameKeyPath: nil,
             cacheName: nil
         )
+
         controller.delegate = self
         return controller
     }()
     //    MARK:- Filter
-    lazy var alertControllerFilter: UIAlertController = {
+    func callFilter() {
         let alertController = UIAlertController(title: "Фильтр по названию поста", message: nil, preferredStyle: .alert)
-        var cancelAction = UIAlertAction(title: "Отмена", style: .default) { _ in }
-        var continueAction = UIAlertAction(title: "Применить фильтр", style: .destructive) { _ in
+        let cancelAction = UIAlertAction(title: "Отмена", style: .default) { _ in }
+        let continueAction = UIAlertAction(title: "Применить фильтр", style: .destructive) { _ in
             let textField = alertController.textFields![0] as UITextField
             guard let text = textField.text else { return }
             let predicate = NSPredicate(format: "%K LIKE %@", #keyPath(LikedContent.title), "\(text)")
             self.request.predicate = predicate
-            self.stack.viewContext.perform {
+            self.stack.viewContext().perform {
                 do {
                     try self.fetchResultsController.performFetch()
                     self.tableViewPosts.reloadData()
@@ -54,12 +53,13 @@ class LikedPostsViewController: UIViewController {
         
         alertController.addAction(cancelAction)
         alertController.addAction(continueAction)
-        return alertController
-    }()
+     
+        self.present(alertController, animated: true, completion: nil)
+    }
     
     @IBAction func fallFilter(_ sender: Any) {
         request.predicate = nil
-        stack.viewContext.perform {
+        stack.viewContext().perform {
             do {
                 try self.fetchResultsController.performFetch()
                 self.tableViewPosts.reloadData()
@@ -69,21 +69,13 @@ class LikedPostsViewController: UIViewController {
         }
     }
     @IBAction func filter(_ sender: Any) {
-        self.present(alertControllerFilter, animated: true, completion: nil)
+        self.callFilter()
     }
-    
-    private var isInitiallyLoaded: Bool = false
     
     @IBOutlet weak var tableViewPosts: UITableView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        notificationCenter.addObserver(forName: .NSManagedObjectContextDidSave, object: nil , queue: nil) { notification in
-            self.stack.viewContext.perform {
-                self.stack.viewContext.mergeChanges(fromContextDidSave: notification)
-            }
-        }
-        
         tableViewPosts.backgroundColor = .white
         tableViewPosts.dataSource = self
         tableViewPosts.delegate = self
@@ -93,10 +85,7 @@ class LikedPostsViewController: UIViewController {
     //    MARK:- PerformFetch
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        if !isInitiallyLoaded {
-            isInitiallyLoaded = true
-            stack.viewContext.perform {
+            stack.viewContext().perform {
                 do {
                     try self.fetchResultsController.performFetch()
                     self.tableViewPosts.reloadData()
@@ -105,7 +94,6 @@ class LikedPostsViewController: UIViewController {
                 }
             }
         }
-    }
 }
 //MARK:-  UITableViewDataSource, UITableViewDelegate
 extension LikedPostsViewController: UITableViewDataSource, UITableViewDelegate {

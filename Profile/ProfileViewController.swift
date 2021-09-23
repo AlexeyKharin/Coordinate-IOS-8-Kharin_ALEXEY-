@@ -3,10 +3,7 @@ import UIKit
 import CoreData
 
 class ProfileViewController: UIViewController {
-    var content: ImageContent?
-    
-    let stack = CoreDataStack()
-    
+
     private lazy var recognizer: UITapGestureRecognizer = {
         let recognizer = UITapGestureRecognizer()
         recognizer.numberOfTapsRequired = 2
@@ -15,32 +12,11 @@ class ProfileViewController: UIViewController {
     }()
     
     @objc func doubleTap(_ gestureRecognizer: UILongPressGestureRecognizer) {
-        let arrayPost = stack.fetchLikedContent()
         
-        var arrayString = [String]()
-        
-        guard let  imageSafety = content?.image , let discreptionSafety = content?.discreption, let likesSafety = content?.likes, let titleSafety = content?.title, let viewsSafety = content?.views else { return }
-        
-        if arrayPost.count != 0 {
-            for i in arrayPost {
-                if let safetyDiscreption = i.discreption {
-                    
-                    arrayString.append(safetyDiscreption)
-                }
-            }
-            if !arrayString.contains(discreptionSafety) {
-                stack.createNewPost(image: imageSafety, likes: likesSafety, views: viewsSafety, discreption: discreptionSafety, title: titleSafety)
-                arrayString = []
-            } else {
-                if let indexRemoved = arrayPost.first(where: { $0.discreption == discreptionSafety}) {
-                    stack.remove(likedContent: indexRemoved)
-                    arrayString = []
-                }
-            }
-        } else {
-            stack.createNewPost(image: imageSafety, likes: likesSafety, views: viewsSafety, discreption: discreptionSafety, title: titleSafety)
+        guard let selectedIndex = tableView.indexPathForSelectedRow else { return }
+        if let cell = tableView.cellForRow(at: selectedIndex) as? PostTableViewCell {
+            cell.update()
         }
-        content = nil
     }
     
     private lazy var tableView: UITableView = {
@@ -48,8 +24,8 @@ class ProfileViewController: UIViewController {
         tableView.backgroundColor = .white
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.addGestureRecognizer(recognizer)
         tableView.toAutoLayout()
+        tableView.addGestureRecognizer(recognizer)
         tableView.register(PostTableViewCell.self, forCellReuseIdentifier: String(describing: PostTableViewCell.self))
         tableView.register(ProfileHeaderForSectionOne.self, forHeaderFooterViewReuseIdentifier: String(describing: ProfileHeaderForSectionOne.self))
         return tableView
@@ -86,13 +62,8 @@ extension ProfileViewController: UITableViewDataSource {
         let cell: PostTableViewCell = tableView.dequeueReusableCell(
             withIdentifier: String(describing: PostTableViewCell.self),
             for: indexPath) as! PostTableViewCell
-        
-        cell.content =  Strotage.collection[indexPath.section].imageContent[indexPath.row]
-        
+            cell.content =  Strotage.collection[indexPath.section].imageContent[indexPath.row]
         return cell
-    }
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        content = Strotage.collection[indexPath.section].imageContent[indexPath.row]
     }
 }
 // MARK: - UITableViewDelegate
